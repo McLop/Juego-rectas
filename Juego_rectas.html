@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Repaso de Rectas - Juego Interactivo</title>
+    <style>
+        body {
+            background-color: #000080; /* Azul Marino */
+            color: white;
+            font-family: Verdana, sans-serif;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .screen { display: none; flex-direction: column; align-items: center; width: 95%; text-align: center; }
+        .active { display: flex; }
+
+        /* Pantalla Inicial */
+        .desc { font-size: 14px; max-width: 700px; margin-bottom: 30px; }
+        .btn-black {
+            background-color: black; color: white; border: none;
+            padding: 15px 30px; font-size: 14px; border-radius: 50px;
+            cursor: pointer; font-family: Verdana;
+        }
+
+        /* Tabla de Juego */
+        table { border-collapse: collapse; margin-top: 20px; width: 100%; max-width: 1000px; }
+        th { 
+            border: 1px solid #add8e6; padding: 10px; font-weight: bold; 
+            font-size: 14px; color: white;
+        }
+        td { 
+            border: 1px solid #add8e6; width: 180px; height: 100px; 
+            vertical-align: middle; position: relative;
+        }
+
+        /* Contenedor de imágenes desordenadas */
+        #dropzone-pool {
+            margin-top: 30px; padding: 20px; border: 1px dashed #add8e6;
+            display: flex; flex-wrap: wrap; justify-content: center; gap: 10px;
+            min-height: 150px; width: 100%; max-width: 1000px;
+        }
+
+        .draggable-img {
+            width: 120px; height: auto; cursor: grab; background: white;
+            border-radius: 4px; border: 1px solid #ccc;
+        }
+
+        /* Estados de validación */
+        .correct { background-color: green !important; }
+        .incorrect { background-color: red !important; }
+
+        /* Pantalla Final */
+        .exit { position: absolute; right: 40px; bottom: 40px; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <div id="screen1" class="screen active">
+        <div class="desc">
+            Con este juego repasarás las características de las rectas y su representación gráfica. 
+            Verás una imagen con la ecuación de una recta escrita en su forma General, y deberás buscar: 
+            su ecuación Explícita, su Pendiente, su Ordenada en el origen y su Gráfica.
+        </div>
+        <button class="btn-black" onclick="showScreen(2)">Pulsa para empezar</button>
+    </div>
+
+    <div id="screen2" class="screen">
+        <table>
+            <thead>
+                <tr>
+                    <th>Ecuación General</th>
+                    <th>Ecuación Explícita</th>
+                    <th>Pendiente</th>
+                    <th>Ordenada en el Origen</th>
+                    <th>Gráfica</th>
+                </tr>
+            </thead>
+            <tbody id="game-rows">
+                <tr data-row="1"><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr data-row="2"><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr data-row="3"><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr data-row="4"><td></td><td></td><td></td><td></td><td></td></tr>
+            </tbody>
+        </table>
+
+        <div id="dropzone-pool"></div>
+        <button class="btn-black" style="margin-top: 20px;" onclick="validateGame()">Comprobar</button>
+    </div>
+
+    <div id="screen3" class="screen">
+        <button class="btn-black" onclick="location.reload()">Pulsa para volver a empezar</button>
+        <div class="exit" onclick="alert('Cerrando aplicación...')">Salir</div>
+    </div>
+
+    <script>
+        const families = [1, 2, 3, 4];
+        const prefixes = ['EkOrok', 'EkEsp', 'Malda', 'JatOrd', 'Grafiko'];
+        const pool = document.getElementById('dropzone-pool');
+
+        // Generar lista de imágenes y desordenarlas
+        let images = [];
+        families.forEach(f => {
+            prefixes.forEach(p => images.push({ name: `${p}${f}.png`, family: f, type: p }));
+        });
+        images.sort(() => Math.random() - 0.5);
+
+        // Crear elementos de imagen
+        images.forEach(imgData => {
+            const img = document.createElement('img');
+            img.src = imgData.name;
+            img.className = 'draggable-img';
+            img.id = imgData.name;
+            img.draggable = true;
+            img.dataset.family = imgData.family;
+            img.dataset.type = imgData.type;
+            img.onerror = function() { this.alt = imgData.name; }; // Fallback si no existe el archivo
+            img.ondragstart = (e) => e.dataTransfer.setData('text', e.target.id);
+            pool.appendChild(img);
+        });
+
+        // Configurar celdas para recibir imágenes
+        document.querySelectorAll('td').forEach((td, index) => {
+            td.ondragover = (e) => e.preventDefault();
+            td.ondrop = (e) => {
+                e.preventDefault();
+                const id = e.dataTransfer.getData('text');
+                const img = document.getElementById(id);
+                if (td.children.length === 0) td.appendChild(img);
+            };
+        });
+
+        // El pool también recibe imágenes de vuelta
+        pool.ondragover = (e) => e.preventDefault();
+        pool.ondrop = (e) => {
+            e.preventDefault();
+            const id = e.dataTransfer.getData('text');
+            pool.appendChild(document.getElementById(id));
+        };
+
+        function showScreen(num) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById('screen' + num).classList.add('active');
+        }
+
+        function validateGame() {
+            const rows = document.querySelectorAll('#game-rows tr');
+            
+            rows.forEach(row => {
+                const cells = row.querySelectorAll('td');
+                let familyReference = null;
+
+                // 1. Identificar la familia de la fila basándonos en la columna 1 (EkOrok)
+                const firstCellImg = cells[0].querySelector('img');
+                if (firstCellImg && firstCellImg.dataset.type === 'EkOrok') {
+                    familyReference = firstCellImg.dataset.family;
+                    cells[0].className = 'correct';
+                } else {
+                    cells[0].className = 'incorrect';
+                }
+
+                // 2. Validar el resto de columnas según la familia detectada
+                for (let i = 1; i < cells.length; i++) {
+                    const img = cells[i].querySelector('img');
+                    const expectedType = prefixes[i];
+
+                    if (img && img.dataset.type === expectedType && img.dataset.family == familyReference) {
+                        cells[i].className = 'correct';
+                    } else {
+                        cells[i].className = 'incorrect';
+                    }
+                }
+            });
+
+            // Pasar a pantalla final tras 7 segundos
+            setTimeout(() => showScreen(3), 7000);
+        }
+    </script>
+</body>
+</html>
