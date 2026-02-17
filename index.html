@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Repaso de Rectas - Juego Interactivo</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #000080;
+            color: white;
+            font-family: Verdana, sans-serif;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow-x: hidden;
+            padding: 20px;
+        }
+
+        .screen { 
+            display: none; 
+            flex-direction: column; 
+            align-items: center; 
+            width: 95%; 
+            max-width: 1200px;
+            text-align: center; 
+        }
+        .active { display: flex; }
+
+        /* Pantalla Inicial */
+        h1 {
+            font-size: 28px;
+            margin-bottom: 20px;
+        }
+
+        .desc { 
+            font-size: 16px; 
+            max-width: 700px; 
+            margin-bottom: 30px; 
+            line-height: 1.6;
+        }
+
+        .btn-black {
+            background-color: black; 
+            color: white; 
+            border: none;
+            padding: 15px 40px; 
+            font-size: 16px; 
+            border-radius: 50px;
+            cursor: pointer; 
+            font-family: Verdana;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .btn-black:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(255, 255, 255, 0.3);
+        }
+
+        .btn-black:active {
+            transform: translateY(0);
+        }
+
+        /* Tabla de Juego */
+        .table-container {
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        table { 
+            border-collapse: collapse; 
+            margin: 20px auto; 
+            width: 100%; 
+            max-width: 1000px;
+            background-color: rgba(0, 0, 128, 0.5);
+        }
+
+        th { 
+            border: 2px solid #add8e6; 
+            padding: 12px; 
+            font-weight: bold; 
+            font-size: 14px; 
+            color: white;
+            background-color: rgba(0, 0, 0, 0.3);
+        }
+
+        td { 
+            border: 2px solid #add8e6; 
+            width: 180px; 
+            height: 120px; 
+            vertical-align: middle; 
+            position: relative;
+            background-color: rgba(255, 255, 255, 0.1);
+            transition: background-color 0.3s;
+        }
+
+        td:hover {
+            background-color: rgba(255, 255, 255, 0.15);
+        }
+
+        td img {
+            max-width: 90%;
+            max-height: 90%;
+            display: block;
+            margin: auto;
+        }
+
+        /* Contenedor de imágenes desordenadas */
+        #dropzone-pool {
+            margin-top: 30px; 
+            padding: 20px; 
+            border: 2px dashed #add8e6;
+            border-radius: 8px;
+            display: flex; 
+            flex-wrap: wrap; 
+            justify-content: center; 
+            gap: 15px;
+            min-height: 180px; 
+            width: 100%; 
+            max-width: 1000px;
+            background-color: rgba(0, 0, 0, 0.2);
+        }
+
+        .pool-title {
+            width: 100%;
+            text-align: center;
+            font-size: 18px;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        .draggable-img {
+            width: 120px; 
+            height: auto; 
+            cursor: grab; 
+            background: white;
+            border-radius: 6px; 
+            border: 2px solid #ccc;
+            padding: 5px;
+            transition: transform 0.2s, box-shadow 0.2s;
+            touch-action: none; /* Para soporte táctil */
+        }
+
+        .draggable-img:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(173, 216, 230, 0.6);
+        }
+
+        .draggable-img.dragging {
+            opacity: 0.5;
+            cursor: grabbing;
+        }
+
+        /* Estados de validación */
+        .correct { 
+            background-color: #28a745 !important; 
+            animation: correctPulse 0.5s ease-in-out;
+        }
+
+        .incorrect { 
+            background-color: #dc3545 !important; 
+            animation: shake 0.5s ease-in-out;
+        }
+
+        @keyframes correctPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        /* Pantalla Final */
+        .score-display {
+            font-size: 48px;
+            margin: 30px 0;
+            font-weight: bold;
+        }
+
+        .score-message {
+            font-size: 20px;
+            margin-bottom: 30px;
+        }
+
+        .exit { 
+            position: fixed; 
+            right: 40px; 
+            bottom: 40px; 
+            cursor: pointer;
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 10px 20px;
+            border-radius: 25px;
+            border: 1px solid white;
+            transition: background-color 0.2s;
+        }
+
+        .exit:hover {
+            background-color: rgba(0, 0, 0, 0.8);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            h1 { font-size: 22px; }
+            .desc { font-size: 14px; }
+            th { font-size: 12px; padding: 8px; }
+            td { width: 100px; height: 80px; }
+            .draggable-img { width: 90px; }
+            .btn-black { padding: 12px 30px; font-size: 14px; }
+        }
+
+        @media (max-width: 480px) {
+            td { width: 70px; height: 60px; }
+            .draggable-img { width: 70px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Pantalla 1: Instrucciones -->
+    <div id="screen1" class="screen active">
+        <h1>🎯 Repaso de Rectas</h1>
+        <div class="desc">
+            Con este juego repasarás las características de las rectas y su representación gráfica. 
+            Verás una imagen con la ecuación de una recta escrita en su forma <strong>General</strong>, 
+            y deberás buscar: su ecuación <strong>Explícita</strong>, su <strong>Pendiente</strong>, 
+            su <strong>Ordenada en el origen</strong> y su <strong>Gráfica</strong>.
+            <br><br>
+            <strong>Instrucciones:</strong> Arrastra cada imagen a la celda correspondiente de su fila.
+        </div>
+        <button class="btn-black" onclick="showScreen(2)">▶ Comenzar Juego</button>
+    </div>
+
+    <!-- Pantalla 2: Juego -->
+    <div id="screen2" class="screen">
+        <h1>🎮 Arrastra las imágenes a su posición correcta</h1>
+        
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Ecuación General</th>
+                        <th>Ecuación Explícita</th>
+                        <th>Pendiente (m)</th>
+                        <th>Ordenada en Origen (n)</th>
+                        <th>Gráfica</th>
+                    </tr>
+                </thead>
+                <tbody id="game-rows">
+                    <tr data-row="1">
+                        <td data-col="0"></td>
+                        <td data-col="1"></td>
+                        <td data-col="2"></td>
+                        <td data-col="3"></td>
+                        <td data-col="4"></td>
+                    </tr>
+                    <tr data-row="2">
+                        <td data-col="0"></td>
+                        <td data-col="1"></td>
+                        <td data-col="2"></td>
+                        <td data-col="3"></td>
+                        <td data-col="4"></td>
+                    </tr>
+                    <tr data-row="3">
+                        <td data-col="0"></td>
+                        <td data-col="1"></td>
+                        <td data-col="2"></td>
+                        <td data-col="3"></td>
+                        <td data-col="4"></td>
+                    </tr>
+                    <tr data-row="4">
+                        <td data-col="0"></td>
+                        <td data-col="1"></td>
+                        <td data-col="2"></td>
+                        <td data-col="3"></td>
+                        <td data-col="4"></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div id="dropzone-pool">
+            <div class="pool-title">📦 Banco de imágenes (arrastra desde aquí)</div>
+        </div>
+        
+        <button class="btn-black" style="margin-top: 30px;" onclick="validateGame()">✓ Comprobar Respuestas</button>
+    </div>
+
+    <!-- Pantalla 3: Resultados -->
+    <div id="screen3" class="screen">
+        <h1>🎉 ¡Juego Completado!</h1>
+        <div class="score-display" id="score-display">--/20</div>
+        <div class="score-message" id="score-message"></div>
+        <button class="btn-black" onclick="location.reload()">🔄 Jugar de Nuevo</button>
+        <div class="exit" onclick="window.close() || alert('Gracias por jugar')">✖ Salir</div>
+    </div>
+
+    <script>
+        const families = [1, 2, 3, 4];
+        const prefixes = ['EkOrok', 'EkEsp', 'Malda', 'JatOrd', 'Grafiko'];
+        const pool = document.getElementById('dropzone-pool');
+        let touchedElement = null;
+
+        // Generar lista de imágenes y desordenarlas
+        let images = [];
+        families.forEach(f => {
+            prefixes.forEach(p => images.push({ 
+                name: `${p}${f}.png`, 
+                family: f, 
+                type: p 
+            }));
+        });
+        images.sort(() => Math.random() - 0.5);
+
+        // Crear elementos de imagen
+        images.forEach(imgData => {
+            const img = document.createElement('img');
+            img.src = `img/${imgData.name}`;
+            img.className = 'draggable-img';
+            img.id = imgData.name;
+            img.draggable = true;
+            img.dataset.family = imgData.family;
+            img.dataset.type = imgData.type;
+            img.alt = imgData.name;
+            
+            // Drag & Drop para escritorio
+            img.ondragstart = (e) => {
+                e.dataTransfer.setData('text', e.target.id);
+                e.target.classList.add('dragging');
+            };
+            
+            img.ondragend = (e) => {
+                e.target.classList.remove('dragging');
+            };
+
+            // Touch events para móviles
+            img.addEventListener('touchstart', handleTouchStart, { passive: false });
+            img.addEventListener('touchmove', handleTouchMove, { passive: false });
+            img.addEventListener('touchend', handleTouchEnd, { passive: false });
+
+            pool.appendChild(img);
+        });
+
+        // Configurar celdas para recibir imágenes (escritorio)
+        document.querySelectorAll('td').forEach((td) => {
+            td.ondragover = (e) => e.preventDefault();
+            td.ondrop = (e) => {
+                e.preventDefault();
+                const id = e.dataTransfer.getData('text');
+                const img = document.getElementById(id);
+                
+                // Si la celda ya tiene imagen, devolverla al pool
+                if (td.children.length > 0) {
+                    pool.appendChild(td.children[0]);
+                }
+                
+                td.appendChild(img);
+            };
+        });
+
+        // El pool también recibe imágenes de vuelta
+        pool.ondragover = (e) => e.preventDefault();
+        pool.ondrop = (e) => {
+            e.preventDefault();
+            const id = e.dataTransfer.getData('text');
+            const img = document.getElementById(id);
+            if (img) pool.appendChild(img);
+        };
+
+        // Funciones para soporte táctil (móviles)
+        function handleTouchStart(e) {
+            e.preventDefault();
+            touchedElement = e.target;
+            touchedElement.style.opacity = '0.5';
+        }
+
+        function handleTouchMove(e) {
+            e.preventDefault();
+            if (!touchedElement) return;
+
+            const touch = e.touches[0];
+            touchedElement.style.position = 'fixed';
+            touchedElement.style.left = touch.pageX - 60 + 'px';
+            touchedElement.style.top = touch.pageY - 60 + 'px';
+            touchedElement.style.zIndex = '1000';
+        }
+
+        function handleTouchEnd(e) {
+            e.preventDefault();
+            if (!touchedElement) return;
+
+            const touch = e.changedTouches[0];
+            const dropTarget = document.elementFromPoint(touch.clientX, touch.clientY);
+            
+            // Resetear estilos
+            touchedElement.style.position = '';
+            touchedElement.style.left = '';
+            touchedElement.style.top = '';
+            touchedElement.style.opacity = '1';
+            touchedElement.style.zIndex = '';
+
+            // Determinar dónde soltar
+            let targetCell = dropTarget;
+            if (targetCell && targetCell.tagName !== 'TD') {
+                targetCell = targetCell.closest('td');
+            }
+
+            if (targetCell && targetCell.tagName === 'TD') {
+                // Si la celda ya tiene imagen, devolverla al pool
+                if (targetCell.children.length > 0) {
+                    pool.appendChild(targetCell.children[0]);
+                }
+                targetCell.appendChild(touchedElement);
+            } else if (dropTarget && dropTarget.closest('#dropzone-pool')) {
+                pool.appendChild(touchedElement);
+            } else {
+                // Si no se soltó en un lugar válido, devolver al pool
+                pool.appendChild(touchedElement);
+            }
+
+            touchedElement = null;
+        }
+
+        function showScreen(num) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById('screen' + num).classList.add('active');
+        }
+
+        function validateGame() {
+            const rows = document.querySelectorAll('#game-rows tr');
+            let correctCount = 0;
+            let totalCells = 0;
+            
+            rows.forEach(row => {
+                const cells = row.querySelectorAll('td');
+                let familyReference = null;
+
+                // 1. Identificar la familia de la fila basándonos en la columna 1 (EkOrok)
+                const firstCellImg = cells[0].querySelector('img');
+                if (firstCellImg && firstCellImg.dataset.type === 'EkOrok') {
+                    familyReference = firstCellImg.dataset.family;
+                    cells[0].className = 'correct';
+                    correctCount++;
+                } else {
+                    cells[0].className = 'incorrect';
+                }
+                totalCells++;
+
+                // 2. Validar el resto de columnas según la familia detectada
+                for (let i = 1; i < cells.length; i++) {
+                    const img = cells[i].querySelector('img');
+                    const expectedType = prefixes[i];
+
+                    if (img && img.dataset.type === expectedType && img.dataset.family == familyReference) {
+                        cells[i].className = 'correct';
+                        correctCount++;
+                    } else {
+                        cells[i].className = 'incorrect';
+                    }
+                    totalCells++;
+                }
+            });
+
+            // Mostrar resultados
+            const scoreDisplay = document.getElementById('score-display');
+            const scoreMessage = document.getElementById('score-message');
+            scoreDisplay.textContent = `${correctCount}/${totalCells}`;
+
+            const percentage = (correctCount / totalCells) * 100;
+            if (percentage === 100) {
+                scoreMessage.textContent = '¡Perfecto! 🏆 ¡Dominas las rectas!';
+            } else if (percentage >= 80) {
+                scoreMessage.textContent = '¡Muy bien! 🌟 Solo algunos errores pequeños.';
+            } else if (percentage >= 60) {
+                scoreMessage.textContent = '¡Buen intento! 👍 Revisa algunos conceptos.';
+            } else {
+                scoreMessage.textContent = '¡Sigue practicando! 📚 Repasa la teoría.';
+            }
+
+            // Pasar a pantalla final tras 3 segundos
+            setTimeout(() => showScreen(3), 3000);
+        }
+    </script>
+</body>
+</html>
